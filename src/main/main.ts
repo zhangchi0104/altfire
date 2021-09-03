@@ -11,11 +11,12 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, globalShortcut } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
+import { resolveHtmlPath, getAssetPath } from './util';
+import buildTray from './tray';
 
 export default class AppUpdater {
   constructor() {
@@ -65,14 +66,6 @@ const createWindow = async () => {
   ) {
     await installExtensions();
   }
-
-  const RESOURCES_PATH = app.isPackaged
-    ? path.join(process.resourcesPath, 'assets')
-    : path.join(__dirname, '../../assets');
-
-  const getAssetPath = (...paths: string[]): string => {
-    return path.join(RESOURCES_PATH, ...paths);
-  };
 
   mainWindow = new BrowserWindow({
     show: false,
@@ -129,8 +122,16 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+const registerShortcuts = () => {
+  globalShortcut.register('Alt+Space', () => console.log('Shortcut Pressed'));
+};
 
-app.whenReady().then(createWindow).catch(console.log);
+const init = () => {
+  buildTray();
+  createWindow();
+  registerShortcuts();
+};
+app.whenReady().then(init).catch(console.log);
 
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
